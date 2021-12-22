@@ -48,6 +48,39 @@ func init(){
 	db = sess.DB(dbName)
 }
 
+func homeHandler(w http.ResponseWriter, req *http.Request){
+	err := rnd.Template(w, http.StatusOK, []string{"static/home.tpl"}, nil)
+	checkErr(err)
+}
+
+///why http.ResonseWriter是用值類型、而 *http.Request要用指針類型??
+func fetchTodos(w http.ResponseWriter, req *http.Request){
+	todos := []todoModel{}
+
+	if err:= db.C(collectionName).Find(bson.M{}).All(&todos); err !=nil{
+		rnd.JSON(w, http.StatusProcessing, renderer.M{
+			"message":"fail to load todos from database",
+			"err":err,
+		})
+		return
+	}
+
+	todoList := []todo{}
+
+	for _, t := range todos{
+		todoList = append(todoList,todo{
+			ID: t.ID.Hex(),
+			Title: t.Title,
+			Completed: t.Completed,
+			CreatedAt:t.CreatedAt,
+		} )
+	}
+
+	rnd.JSON(w, http.StatusOK, renderer.M{
+		"data":todoList,
+	})
+}
+
 func main(){
 	///channel for stop progress gracefully
 	stopChan := make(chan os.Signal)
