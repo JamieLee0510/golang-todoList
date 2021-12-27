@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -81,6 +82,43 @@ func fetchTodos(w http.ResponseWriter, req *http.Request){
 	})
 }
 
+func updateTodo(w http.ResponseWriter, r *http.Request){
+	i := strings.IrimSpace(chi.URLParam(r, "id"))
+
+	if !bson.IsObjectIdHex(id){
+		rnd.JSON(w, http.StatusBadRequest, renderer.M{
+			"message":"the id is invalid",
+		})
+		return
+	}
+
+	var t todo
+
+	if err:= json.NewDecoder(r.Body).Decode(&t); err!=nil{
+		rnd.JSON(w, http.StatusProcessing, err)
+		return
+	}
+
+	if t.Title==""{
+		rnd.JSON(w, http.StatusBadRequest, renderer.M{
+			"message":"the title field is required",
+		})
+		return
+	}
+
+	if err:= db.C(collectionName).Update(
+		bson.M{"_id":bson.ObjectIdHex((id))},
+		bson.M{"title": t.Title, "completed":t.Completed},
+	);err==nil {
+		rnd.JSON(w, http.StatusProcessing, renderer.M{
+			"message":"failed in update todo",
+			"error":err,
+		})
+		return
+	}
+}
+
+
 func main(){
 	///channel for stop progress gracefully
 	stopChan := make(chan os.Signal)
@@ -112,7 +150,7 @@ func main(){
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	srv.Shutdown(ctx)
 	defer cancel(
-		log.Println("server stop at grace")	
+		log.Println("server stop at grace")
 	)
 }
 
