@@ -21,10 +21,10 @@ var rnd *renderer.Render
 var db *mgo.Database
 
 const (
-	hostName string = "localhost:27019"
+	hostName string = "localhost:27017"
 	dbName string = "demo_todo"
 	collectionName string = "todo"
-	port string = ":9000"
+	port string = ":9100"
 )
 
 type(
